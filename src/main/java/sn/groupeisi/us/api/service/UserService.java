@@ -11,6 +11,7 @@ import sn.groupeisi.us.api.dto.UserDto;
 import sn.groupeisi.us.api.entity.*;
 import sn.groupeisi.us.api.exception.EntityAlreadyExistsException;
 import sn.groupeisi.us.api.exception.EntityNotFoundException;
+import sn.groupeisi.us.api.mapper.DisponibiliteMapper;
 import sn.groupeisi.us.api.mapper.UserMapper;
 import sn.groupeisi.us.api.repository.*;
 
@@ -26,6 +27,7 @@ public class UserService {
     private final RoleRepository roleRepository;
     private final FiliereRepository filiereRepository;
     private final DomaineRepository domaineRepository;
+    private final DisponibiliteMapper disponibiliteMapper;
     private final UserMapper userMapper;
 
     public UserService(UserRepository userRepository,
@@ -35,7 +37,8 @@ public class UserService {
                        RoleRepository roleRepository,
                        FiliereRepository filiereRepository,
                        DomaineRepository domaineRepository,
-                       UserMapper userMapper) {
+                       UserMapper userMapper,
+                       DisponibiliteMapper disponibiliteMapper) {
         this.userRepository = userRepository;
         this.etudiantRepository = etudiantRepository;
         this.adminRepository = adminRepository;
@@ -44,6 +47,7 @@ public class UserService {
         this.filiereRepository = filiereRepository;
         this.domaineRepository = domaineRepository;
         this.userMapper = userMapper;
+        this.disponibiliteMapper = disponibiliteMapper;
     }
 
     public EtudiantDto registerEtudiant(EtudiantDto etudiantDto) {
@@ -227,15 +231,31 @@ public class UserService {
         copyUserDetailsToDto(mentorEntity, mentorDto);
 
         // Gérer les collections nulles
-        mentorDto.setFiliereIds(mentorEntity.getFilieres() != null
+        // Mapper les IDs des filières
+        mentorDto.setFiliereIds(Optional.ofNullable(mentorEntity.getFilieres())
+                .orElse(Collections.emptySet())
+                .stream()
+                .map(FiliereEntity::getId)
+                .collect(Collectors.toSet()));
+
+        // Mapper les IDs des domaines
+        mentorDto.setDomaineIds(Optional.ofNullable(mentorEntity.getDomaines())
+                .orElse(Collections.emptySet())
+                .stream()
+                .map(DomaineEntity::getId)
+                .collect(Collectors.toSet()));
+
+        /*mentorDto.setFiliereIds(mentorEntity.getFilieres() != null
                 ? mentorEntity.getFilieres().stream().map(FiliereEntity::getId).collect(Collectors.toSet())
                 : new HashSet<>());
 
         mentorDto.setDomaineIds(mentorEntity.getDomaines() != null
                 ? mentorEntity.getDomaines().stream().map(DomaineEntity::getId).collect(Collectors.toSet())
-                : new HashSet<>());
+                : new HashSet<>());*/
 
+        mentorDto.setDisponibilite(disponibiliteMapper.toDto(mentorEntity.getDisponibilite()));
         mentorDto.setDescription(mentorEntity.getDescription());
+        mentorDto.setSpecialite(mentorEntity.getSpecialite());
 
         return mentorDto;
     }
@@ -254,11 +274,16 @@ public class UserService {
         userDto.setRoleNom(userEntity.getRole().getNom());
 
         // Vérifiez si le statut est nul
-        if (userEntity.getStatut() != null) {
+        /*if (userEntity.getStatut() != null) {
             userDto.setStatut(userEntity.getStatut().toString());
         } else {
             userDto.setStatut("INDEFINI"); // Valeur par défaut ou gérer autrement
-        }
+        }*/
+
+        // Gestion du statut avec une valeur par défaut
+        userDto.setStatut(Optional.ofNullable(userEntity.getStatut())
+                .map(Enum::toString)
+                .orElse("INDEFINI"));
 
         return userDto;
     }
@@ -301,4 +326,31 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
+
+    /* *********************************************************************
+        RECHERCHE
+     * *********************************************************************/
+
+
+    /**
+     * Rechercher des mentors selon plusieurs critères.
+     *
+     * @param nom     Nom ou prénom du mentor.
+     * @param statut  Statut de disponibilité (ouvert, plein, indisponible).
+     * @param filiere Nom de la filière.
+     * @param domaine Nom du domaine.
+     * @return Liste des mentors correspondants sous forme de DTO.
+     */
+    public List<MentorDto> rechercherMentors(String nom, String statut, String filiere, String domaine) {
+        List<MentorEntity> mentors = mentorRepository.rechercherMentors(nom, statut, filiere, domaine);
+
+        if (mentors.isEmpty()) {
+            throw new EntityNotFoundException("Aucun mentor trouvé pour les critères spécifiés.");
+        }
+
+        // Convertir les entités en DTOs
+        return mentors.stream()
+                .map(this::toMentorDto)
+                .toList();
+    }
 }

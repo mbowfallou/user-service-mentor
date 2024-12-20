@@ -1,9 +1,6 @@
 package sn.groupeisi.us.api.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -31,4 +28,8 @@ public class MentorEntity extends UserEntity{
             inverseJoinColumns = @JoinColumn(name = "domaine_id")
     )
     private Set<DomaineEntity> domaines;
+
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "disponibilite_id", referencedColumnName = "id")
+    private DisponibiliteEntity disponibilite; // Disponibilité du mentor
 }
