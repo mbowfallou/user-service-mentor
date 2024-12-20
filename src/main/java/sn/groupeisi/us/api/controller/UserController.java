@@ -118,4 +118,27 @@ public class UserController {
         return ResponseEntity.ok(updatedUser);
     }
     */
+
+
+
+
+    /**
+     * Endpoint pour rechercher des mentors selon plusieurs critères.
+     *
+     * @param nom     Nom ou prénom du mentor.
+     * @param statut  Statut de disponibilité (ouvert, plein, indisponible).
+     * @param filiere Nom de la filière.
+     * @param domaine Nom du domaine.
+     * @return Liste des mentors correspondants sous forme de DTO.
+     */
+    @GetMapping("/search")
+    public ResponseEntity<List<MentorDto>> rechercherMentors(
+            @RequestParam(required = false) String nom,
+            @RequestParam(required = false) String statut,
+            @RequestParam(required = false) String filiere,
+            @RequestParam(required = false) String domaine
+    ) {
+        List<MentorDto> mentors = userService.rechercherMentors(nom, statut, filiere, domaine);
+        return ResponseEntity.ok(mentors);
+    }
 }

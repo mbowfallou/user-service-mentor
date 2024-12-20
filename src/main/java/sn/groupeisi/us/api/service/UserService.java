@@ -15,6 +15,7 @@ import sn.groupeisi.us.api.mapper.DisponibiliteMapper;
 import sn.groupeisi.us.api.mapper.UserMapper;
 import sn.groupeisi.us.api.repository.*;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -90,8 +91,20 @@ public class UserService {
         mentor.setDomaines(domaines);
         mentor.setDescription(mentorDto.getDescription());
         mentor.setRole(roleMentor);
+        mentor.setStatut(UserEntity.StatutUser.INACTIF); // Statut inactif par défaut
 
-        return toMentorDto(mentorRepository.save(mentor));
+        MentorEntity savedMentor = mentorRepository.save(mentor);
+
+        // Créer une demande d'adhésion associée
+        DemandeAdhesionEntity demandeAdhesion = new DemandeAdhesionEntity();
+        demandeAdhesion.setDateDemande(LocalDateTime.now());
+        demandeAdhesion.setMentor(savedMentor);
+        demandeAdhesion.setStatut(DemandeAdhesionEntity.StatutDemande.EN_ATTENTE);
+
+        savedMentor.setDemandeAdhesion(demandeAdhesion);
+        mentorRepository.save(savedMentor); // Sauvegarder à nouveau avec la demande associée
+
+        return toMentorDto(savedMentor);
     }
 
     // Méthode pour enregistrer un administrateur

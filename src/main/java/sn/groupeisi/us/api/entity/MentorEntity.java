@@ -32,4 +32,8 @@ public class MentorEntity extends UserEntity{
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "disponibilite_id", referencedColumnName = "id")
     private DisponibiliteEntity disponibilite; // Disponibilité du mentor
+
+    @OneToOne(mappedBy = "mentor", cascade = CascadeType.ALL, orphanRemoval = true)
+
+    private DemandeAdhesionEntity demandeAdhesion; // Demande associée au mentor
 }
