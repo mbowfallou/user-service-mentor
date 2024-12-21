@@ -51,6 +51,7 @@ public class UserService {
         this.disponibiliteMapper = disponibiliteMapper;
     }
 
+    @Transactional
     public EtudiantDto registerEtudiant(EtudiantDto etudiantDto) {
         // Vérifie si l'email ou le nom d'utilisateur existe déjà
         checkEmailAndUsername(etudiantDto);
@@ -71,6 +72,7 @@ public class UserService {
         return toEtudiantDto(etudiantRepository.save(etudiant));
     }
 
+    @Transactional
     public MentorDto registerMentor(MentorDto mentorDto) {
         // Vérifie si l'email ou le nom d'utilisateur existe déjà
         checkEmailAndUsername(mentorDto);
@@ -108,6 +110,7 @@ public class UserService {
     }
 
     // Méthode pour enregistrer un administrateur
+    @Transactional
     public AdminDto registerAdmin(AdminDto adminDto) {
         // Vérifie si l'email ou le nom d'utilisateur existe déjà
         checkEmailAndUsername(adminDto);
@@ -135,15 +138,6 @@ public class UserService {
         user.setMotDePasse(PasswordUtil.encode(dto.getMotDePasse()));
         user.setPhoto(dto.getPhoto());
         user.setStatut(UserEntity.StatutUser.INACTIF);
-    }
-
-    /**
-     * Récupérer un utilisateur par ID.
-     */
-    public UserDto getUserById(Long id) {
-        UserEntity user = userRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Utilisateur avec l'ID " + id + " introuvable"));
-        return copyUserDetailsToDto(user);
     }
 
     /**
@@ -190,6 +184,7 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public UserDto updateUserRole(Long userId, String roleName) {
         // Récupérer l'utilisateur
         UserEntity user = userRepository.findById(userId)
@@ -213,6 +208,7 @@ public class UserService {
     /**
      * Supprimer un utilisateur.
      */
+    @Transactional
     public void deleteUser(Long id) {
         UserEntity user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Utilisateur avec l'ID " + id + " introuvable"));
@@ -273,8 +269,34 @@ public class UserService {
         return mentorDto;
     }
 
+    /**
+     * Obtenir le rôle d'un utilisateur par son ID.
+     *
+     * @param userId L'identifiant de l'utilisateur.
+     * @return Le rôle de l'utilisateur sous forme de chaîne.
+     */
+    public String getRoleByUserId(Long userId) {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("Utilisateur introuvable avec l'ID : " + userId));
+
+        if (user.getRole() == null) {
+            throw new EntityNotFoundException("Aucun rôle associé à l'utilisateur avec l'ID : " + userId);
+        }
+
+        return user.getRole().getNom(); // Retourne le nom du rôle
+    }
+
+    /**
+     * Récupérer tous les étudiants sous la tutelle d'un mentor.
+     *
+     * @param mentorId L'identifiant du mentor.
+     * @return Liste des détails des étudiants.
+     */
+    // A COMPLETER
+
     public UserDto copyUserDetailsToDto(UserEntity userEntity, UserDto userDto) {
 
+        System.out.println("Le role du UTILISATEUR: "+userEntity.getRole().getNom());
         userDto.setId(userEntity.getId());
         userDto.setPrenom(userEntity.getPrenom());
         userDto.setNom(userEntity.getNom());

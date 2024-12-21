@@ -1,22 +1,19 @@
 package sn.groupeisi.us.api.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sn.groupeisi.us.api.dto.AdminDto;
 import sn.groupeisi.us.api.dto.EtudiantDto;
 import sn.groupeisi.us.api.dto.MentorDto;
-import sn.groupeisi.us.api.dto.UserDto;
 import sn.groupeisi.us.api.entity.AdminEntity;
 import sn.groupeisi.us.api.entity.EtudiantEntity;
 import sn.groupeisi.us.api.entity.MentorEntity;
 import sn.groupeisi.us.api.entity.UserEntity;
+import sn.groupeisi.us.api.exception.EntityNotFoundException;
 import sn.groupeisi.us.api.service.UserService;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/user")
@@ -58,12 +55,16 @@ public class UserController {
         // Identifie le type d'utilisateur en fonction de son rôle ou de sa classe
         switch (user.getRole().getNom().toUpperCase()) {
             case "ETUDIANT":
+                System.out.println("\n\tCASE ETUDIANT\n");
                 return ResponseEntity.ok(userService.toEtudiantDto((EtudiantEntity) user));
             case "MENTOR":
+                System.out.println("\n\tCASE MENTOR\n");
                 return ResponseEntity.ok(userService.toMentorDto((MentorEntity) user));
             case "ADMIN":
+                System.out.println("\n\tCASE ADMIN\n");
                 return ResponseEntity.ok(userService.toAdminDto((AdminEntity) user));
             default:
+                System.out.println("\n\tCASE DEFAULT\n");
                 // Retourne un UserDto générique si le rôle ne correspond pas
                 return ResponseEntity.ok(userService.copyUserDetailsToDto(user));
         }
@@ -84,7 +85,7 @@ public class UserController {
     }
 
     // Retrieve all Students
-    @GetMapping("/students")
+    @GetMapping("/etudiants")
     public ResponseEntity<List<EtudiantDto>> getAllStudents() {
         List<EtudiantDto> students = userService.getAllStudents();
         return ResponseEntity.ok(students);
@@ -97,12 +98,23 @@ public class UserController {
         return ResponseEntity.ok(mentors);
     }
 
-    // Change the Role of a User
-    @PatchMapping("/{id}/role")
-    public ResponseEntity<UserDto> updateUserRole(@PathVariable Long id, @RequestParam String roleName) {
-        UserDto updatedUser = userService.updateUserRole(id, roleName);
-        return ResponseEntity.ok(updatedUser);
+    // Récupérer le rôle d'un utilisateur par son ID.
+    @GetMapping("/{id}/role")
+    public ResponseEntity<String> getRoleByUserId(@PathVariable Long id) {
+        try {
+            String role = userService.getRoleByUserId(id);
+            return ResponseEntity.ok(role);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
+
+    // Change the Role of a User
+//    @PatchMapping("/{id}/role")
+//    public ResponseEntity<UserDto> updateUserRole(@PathVariable Long id, @RequestParam String roleName) {
+//        UserDto updatedUser = userService.updateUserRole(id, roleName);
+//        return ResponseEntity.ok(updatedUser);
+//    }
 
     // Delete a user
     @DeleteMapping("/{id}")
