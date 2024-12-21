@@ -1,11 +1,13 @@
 package sn.groupeisi.us.api.service;
 
 import org.springframework.stereotype.Service;
+import sn.groupeisi.us.api.dto.DemandeDeMentoratDto;
 import sn.groupeisi.us.api.entity.DemandeDeMentoratEntity;
 import sn.groupeisi.us.api.entity.DomaineEntity;
 import sn.groupeisi.us.api.entity.EtudiantEntity;
 import sn.groupeisi.us.api.entity.MentorEntity;
 import sn.groupeisi.us.api.exception.EntityNotFoundException;
+import sn.groupeisi.us.api.mapper.DemandeDeMentoratMapper;
 import sn.groupeisi.us.api.repository.DemandeDeMentoratRepository;
 import sn.groupeisi.us.api.repository.DomaineRepository;
 import sn.groupeisi.us.api.repository.EtudiantRepository;
@@ -23,23 +25,26 @@ public class MentoratService {
     private final EtudiantRepository etudiantRepository;
     private final MentorRepository mentorRepository;
     private final DomaineRepository domaineRepository;
+    private final DemandeDeMentoratMapper demandeDeMentoratMapper;
 
     public MentoratService(
             DemandeDeMentoratRepository demandeDeMentoratRepository,
             EtudiantRepository etudiantRepository,
             MentorRepository mentorRepository,
-            DomaineRepository domaineRepository
+            DomaineRepository domaineRepository,
+            DemandeDeMentoratMapper demandeDeMentoratMapper
     ) {
         this.demandeDeMentoratRepository = demandeDeMentoratRepository;
         this.etudiantRepository = etudiantRepository;
         this.mentorRepository = mentorRepository;
         this.domaineRepository = domaineRepository;
+        this.demandeDeMentoratMapper = demandeDeMentoratMapper;
     }
 
     /**
      * Envoyer une demande de mentorat.
      */
-    public DemandeDeMentoratEntity envoyerDemande(Long etudiantId, Long mentorId, Set<Long> domaineIds) {
+    public DemandeDeMentoratDto envoyerDemande(Long etudiantId, Long mentorId, Set<Long> domaineIds) {
         EtudiantEntity etudiant = etudiantRepository.findById(etudiantId)
                 .orElseThrow(() -> new EntityNotFoundException("Étudiant introuvable avec l'ID : " + etudiantId));
 
@@ -58,84 +63,95 @@ public class MentoratService {
         demande.setDateDemande(LocalDateTime.now());
         demande.setStatut(DemandeDeMentoratEntity.StatutDemande.EN_ATTENTE);
 
-        return demandeDeMentoratRepository.save(demande);
+        // Exemple de retour du DTO après création
+        DemandeDeMentoratEntity savedDemande = demandeDeMentoratRepository.save(demande);
+        return demandeDeMentoratMapper.toDto(savedDemande);
     }
 
     /**
      * Accepter une demande de mentorat.
      */
-    public DemandeDeMentoratEntity accepterDemande(Long demandeId) {
-        // Récupérer la demande par ID
+    public DemandeDeMentoratDto accepterDemande(Long demandeId) {
         DemandeDeMentoratEntity demande = demandeDeMentoratRepository.findById(demandeId)
                 .orElseThrow(() -> new EntityNotFoundException("Demande introuvable avec l'ID : " + demandeId));
 
-        // Vérifier si la demande a déjà été traitée
         if (demande.getStatut() != DemandeDeMentoratEntity.StatutDemande.EN_ATTENTE) {
-            throw new IllegalStateException("Cette demande a déjà été traitée avec le statut : " + demande.getStatut());
+            throw new IllegalStateException("Cette demande a déjà été traitée.");
         }
 
-        // Mettre à jour le statut de la demande
         demande.setStatut(DemandeDeMentoratEntity.StatutDemande.ACCEPTEE);
-        demande.setDateTraitement(LocalDateTime.now()); // Mettre à jour la date de traitement
+        demande.setDateTraitement(LocalDateTime.now());
 
-        return demandeDeMentoratRepository.save(demande);
+        return demandeDeMentoratMapper.toDto(demandeDeMentoratRepository.save(demande));
     }
-
 
     /**
      * Refuser une demande de mentorat.
      */
-    public DemandeDeMentoratEntity refuserDemande(Long demandeId) {
-        // Récupérer la demande par ID
+    public DemandeDeMentoratDto refuserDemande(Long demandeId) {
         DemandeDeMentoratEntity demande = demandeDeMentoratRepository.findById(demandeId)
                 .orElseThrow(() -> new EntityNotFoundException("Demande introuvable avec l'ID : " + demandeId));
 
-        // Vérifier si la demande a déjà été traitée
         if (demande.getStatut() != DemandeDeMentoratEntity.StatutDemande.EN_ATTENTE) {
-            throw new IllegalStateException("Cette demande a déjà été traitée avec le statut : " + demande.getStatut());
+            throw new IllegalStateException("Cette demande a déjà été traitée.");
         }
 
-        // Mettre à jour le statut de la demande
         demande.setStatut(DemandeDeMentoratEntity.StatutDemande.REFUSEE);
-        demande.setDateTraitement(LocalDateTime.now()); // Mettre à jour la date de traitement
+        demande.setDateTraitement(LocalDateTime.now());
 
-        return demandeDeMentoratRepository.save(demande);
-    }
-
-
-    /**
-     * Lister les demandes pour un mentor.
-     */
-    public List<DemandeDeMentoratEntity> getDemandesByMentor(Long mentorId) {
-        return demandeDeMentoratRepository.findByMentorId(mentorId);
+        return demandeDeMentoratMapper.toDto(demandeDeMentoratRepository.save(demande));
     }
 
     /**
-     * Lister les demandes pour un étudiant.
+     * Annuler une demande de mentorat par un étudiant.
      */
-    public List<DemandeDeMentoratEntity> getDemandesByEtudiant(Long etudiantId) {
-        return demandeDeMentoratRepository.findByEtudiantId(etudiantId);
-    }
-
-    public DemandeDeMentoratEntity annulerDemande(Long demandeId, Long etudiantId) {
-        // Récupérer la demande
+    public void annulerDemande(Long demandeId, Long etudiantId) {
         DemandeDeMentoratEntity demande = demandeDeMentoratRepository.findById(demandeId)
                 .orElseThrow(() -> new EntityNotFoundException("Demande introuvable avec l'ID : " + demandeId));
 
-        // Vérifier si l'étudiant est bien l'auteur de la demande
         if (!demande.getEtudiant().getId().equals(etudiantId)) {
-            throw new IllegalStateException("Vous ne pouvez pas annuler une demande qui ne vous appartient pas.");
+            throw new IllegalArgumentException("Vous ne pouvez pas annuler une demande qui ne vous appartient pas.");
         }
 
-        // Vérifier si la demande a déjà été traitée
         if (demande.getStatut() != DemandeDeMentoratEntity.StatutDemande.EN_ATTENTE) {
-            throw new IllegalStateException("Vous ne pouvez pas annuler une demande qui a déjà été traitée.");
+            throw new IllegalStateException("Vous ne pouvez pas annuler une demande déjà traitée.");
         }
 
-        // Supprimer la demande
         demandeDeMentoratRepository.delete(demande);
+    }
 
-        return demande;
+    /**
+     * Obtenir toutes les demandes de mentorat.
+     */
+    public List<DemandeDeMentoratDto> getAllDemandes() {
+        List<DemandeDeMentoratEntity> demandes = demandeDeMentoratRepository.findAll();
+        return demandes.stream().map(demandeDeMentoratMapper::toDto).toList();
+    }
+
+
+    /**
+     * Obtenir toutes les demandes d'un mentor.
+     */
+    public List<DemandeDeMentoratDto> getDemandesByMentor(Long mentorId) {
+        List<DemandeDeMentoratEntity> demandes = demandeDeMentoratRepository.findByMentorId(mentorId);
+        return demandes.stream().map(demandeDeMentoratMapper::toDto).toList();
+    }
+
+    /**
+     * Obtenir toutes les demandes d'un étudiant.
+     */
+    public List<DemandeDeMentoratDto> getDemandesByEtudiant(Long etudiantId) {
+        List<DemandeDeMentoratEntity> demandes = demandeDeMentoratRepository.findByEtudiantId(etudiantId);
+        return demandes.stream().map(demandeDeMentoratMapper::toDto).toList();
+    }
+
+    /**
+     * Obtenir une demande spécifique par ID.
+     */
+    public DemandeDeMentoratDto getDemandeById(Long demandeId) {
+        DemandeDeMentoratEntity demande = demandeDeMentoratRepository.findById(demandeId)
+                .orElseThrow(() -> new EntityNotFoundException("Demande introuvable avec l'ID : " + demandeId));
+        return demandeDeMentoratMapper.toDto(demande);
     }
 
 }
