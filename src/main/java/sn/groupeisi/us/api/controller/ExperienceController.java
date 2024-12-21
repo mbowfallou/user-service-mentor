@@ -10,7 +10,7 @@ import sn.groupeisi.us.api.service.ExperienceService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/exp")
+@RequestMapping("/experience")
 public class ExperienceController {
     private final ExperienceService experienceService;
 

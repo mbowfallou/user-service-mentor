@@ -102,19 +102,48 @@ public class MentoratService {
         return demandeDeMentoratMapper.toDto(demandeDeMentoratRepository.save(demande));
     }
 
+
     /**
      * Annuler une demande de mentorat par un étudiant.
      */
-    public void annulerDemande(Long demandeId, Long etudiantId) {
+    public DemandeDeMentoratDto annulerDemande(Long demandeId, Long etudiantId) {
+        // Récupérer la demande
         DemandeDeMentoratEntity demande = demandeDeMentoratRepository.findById(demandeId)
                 .orElseThrow(() -> new EntityNotFoundException("Demande introuvable avec l'ID : " + demandeId));
 
+        // Vérifier si l'étudiant est bien l'auteur de la demande
         if (!demande.getEtudiant().getId().equals(etudiantId)) {
             throw new IllegalArgumentException("Vous ne pouvez pas annuler une demande qui ne vous appartient pas.");
         }
 
+        // Vérifier si la demande est déjà traitée
         if (demande.getStatut() != DemandeDeMentoratEntity.StatutDemande.EN_ATTENTE) {
             throw new IllegalStateException("Vous ne pouvez pas annuler une demande déjà traitée.");
+        }
+
+        // Mettre à jour le statut de la demande
+        demande.setStatut(DemandeDeMentoratEntity.StatutDemande.ANNULEE);
+        demande.setDateTraitement(LocalDateTime.now());
+
+        // Sauvegarder et retourner le DTO
+        DemandeDeMentoratEntity updatedDemande = demandeDeMentoratRepository.save(demande);
+        return demandeDeMentoratMapper.toDto(updatedDemande);
+    }
+
+
+    /**
+     * Supprimer une demande de mentorat par un étudiant.
+     */
+    public void supprimerDemande(Long demandeId, Long etudiantId) {
+        DemandeDeMentoratEntity demande = demandeDeMentoratRepository.findById(demandeId)
+                .orElseThrow(() -> new EntityNotFoundException("Demande introuvable avec l'ID : " + demandeId));
+
+        if (!demande.getEtudiant().getId().equals(etudiantId)) {
+            throw new IllegalArgumentException("Vous ne pouvez pas supprimer une demande qui ne vous appartient pas.");
+        }
+
+        if (demande.getStatut() != DemandeDeMentoratEntity.StatutDemande.EN_ATTENTE) {
+            throw new IllegalStateException("Vous ne pouvez pas supprimer une demande déjà traitée.");
         }
 
         demandeDeMentoratRepository.delete(demande);

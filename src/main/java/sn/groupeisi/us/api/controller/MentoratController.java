@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/mentorat")
+@RequestMapping("/mentorat")
 public class MentoratController {
     private final MentoratService mentoratService;
 
@@ -92,8 +92,32 @@ public class MentoratController {
     /**
      * Annuler une demande de mentorat par un étudiant.
      */
-    @DeleteMapping("/annuler")
-    public ResponseEntity<String> annulerDemande(@RequestBody Map<String, Long> payload) {
+    @PutMapping("/annuler")
+    public ResponseEntity<DemandeDeMentoratDto> annulerDemande(@RequestBody Map<String, Long> payload) {
+        Long demandeId = payload.get("demandeId");
+        Long etudiantId = payload.get("etudiantId");
+
+        // Vérifie si les deux paramètres sont présents
+        if (demandeId == null || etudiantId == null) {
+            return ResponseEntity.badRequest().body(null);
+        }
+
+        try {
+            DemandeDeMentoratDto updatedDemande = mentoratService.annulerDemande(demandeId, etudiantId);
+            return ResponseEntity.ok(updatedDemande);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(null);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(404).body(null);
+        }
+    }
+
+
+    /**
+     * Supprimer une demande de mentorat par un étudiant.
+     */
+    @DeleteMapping("/supprimer")
+    public ResponseEntity<String> annulerSupprimer(@RequestBody Map<String, Long> payload) {
         Long demandeId = payload.get("demandeId");
         Long etudiantId = payload.get("etudiantId");
 
@@ -103,8 +127,8 @@ public class MentoratController {
         }
 
         try {
-            mentoratService.annulerDemande(demandeId, etudiantId);
-            return ResponseEntity.ok("Demande de mentorat annulée avec succès.");
+            mentoratService.supprimerDemande(demandeId, etudiantId);
+            return ResponseEntity.ok("Demande de mentorat supprimée avec succès.");
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (EntityNotFoundException e) {

@@ -2,6 +2,8 @@ server:
   port: 9090  # Définit le port de ton serveur Spring Boot
 
 spring:
+  application:
+    name: USERS-SERVICE
   datasource:
     url: jdbc:mysql://localhost:3306/userservice_db?createDatabseIfNotExist=true&useUnicode=true&useJDBCCompliantTimezoneShift=true
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -16,6 +18,16 @@ spring:
     properties:
       hibernate:
         format_sql: true  # Formate les requêtes SQL pour une meilleure lisibilité
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/ # URL du serveur Eureka
+    fetch-registry: true # Pour récupérer les services enregistrés
+    register-with-eureka: true # Pour s'enregistrer dans Eureka
+  instance:
+    hostname: localhost # Nom d'hôte (modifiable si nécessaire)
+    prefer-ip-address: true # Utiliser l'adresse IP au lieu du nom d'hôte
 
 logging:
   level:

@@ -44,6 +44,6 @@ public class DemandeDeMentoratEntity {
     private StatutDemande statut = StatutDemande.EN_ATTENTE; // Statut initial
 
     public enum StatutDemande {
-        EN_ATTENTE, ACCEPTEE, REFUSEE
+        EN_ATTENTE, ACCEPTEE, REFUSEE, ANNULEE
     }
 }
